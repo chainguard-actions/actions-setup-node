@@ -1,6 +1,12 @@
 # actions/setup-node
 
-Hardened GitHub Action by [Chainguard](https://www.chainguard.dev).
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/actions/setup-node](https://github.com/actions/setup-node).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v6.3.0 | [`v6.3.0`](https://github.com/chainguard-actions/setup-node/tree/v6.3.0) | — |
 
 ## Privacy
 
