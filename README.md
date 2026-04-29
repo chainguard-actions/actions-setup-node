@@ -1,5 +1,7 @@
 # actions/setup-node
 
+Set up your GitHub Actions workflow with a specific version of node.js
+
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/actions/setup-node](https://github.com/actions/setup-node).
 
 ## Versions
