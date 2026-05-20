@@ -1,7 +1,0 @@
-{
-  "owner": "actions",
-  "name": "setup-node",
-  "visibility": "internal",
-  "description": "Set up your GitHub Actions workflow with a specific version of node.js",
-  "block_publish": false
-}
