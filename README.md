@@ -1,6 +1,6 @@
 # actions/setup-node
 
-Set up your GitHub Actions workflow with a specific version of node.js
+Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.
 
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/actions/setup-node](https://github.com/actions/setup-node).
 
