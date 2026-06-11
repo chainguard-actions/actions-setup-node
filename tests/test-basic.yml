@@ -1,0 +1,27 @@
+name: Test basic node-version and architecture
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          node-version: '20'
+          architecture: x64
+      - name: Assert node-version output
+        env:
+          NODE_VER: ${{ steps.action.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert node is on PATH
+        run: |
+          node --version
+          echo "PASS: node is available"
