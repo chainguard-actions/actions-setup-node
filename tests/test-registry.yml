@@ -6,23 +6,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - id: action
+      - id: setup-node
         uses: .
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
           scope: '@myorg'
-      - name: Assert node-version output
-        env:
-          NODE_VER: ${{ steps.action.outputs.node-version }}
+      - name: Assert node is available
         run: |
-          echo "node-version: $NODE_VER"
+          node --version
+          echo "PASS: node is available"
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup-node.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
           if [ -z "$NODE_VER" ]; then
             echo "FAIL: node-version output is empty"
             exit 1
           fi
-          echo "PASS"
-      - name: Assert node is available
-        run: |
-          node --version
           echo "PASS"

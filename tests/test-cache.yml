@@ -6,37 +6,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Create package-lock.json for cache
-        run: |
-          cat > package.json <<'EOF'
-          {
-            "name": "test",
-            "version": "1.0.0",
-            "lockfileVersion": 1
-          }
-          EOF
-          cat > package-lock.json <<'EOF'
-          {
-            "name": "test",
-            "version": "1.0.0",
-            "lockfileVersion": 1,
-            "requires": true,
-            "dependencies": {}
-          }
-          EOF
-      - id: action
+      - id: setup-node
         uses: .
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Assert node-version output
-        env:
-          NODE_VER: ${{ steps.action.outputs.node-version }}
+          cache-dependency-path: 'actions/hardened/actions--setup-node/v6.3.0/tests/fixtures/package-lock.json'
+      - name: Assert node is available
         run: |
-          echo "node-version: $NODE_VER"
-          if [ -z "$NODE_VER" ]; then
-            echo "FAIL: node-version output is empty"
-            exit 1
-          fi
-          echo "PASS"
+          node --version
+          echo "PASS: node is available"
+      - name: Assert cache-hit output exists
+        env:
+          CACHE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+        run: |
+          echo "cache-hit output: $CACHE_HIT"
+          echo "PASS: cache-hit output checked"

@@ -6,17 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Create .nvmrc file
-        run: echo "20" > .nvmrc
-      - id: action
+      - id: setup-node
         uses: .
         with:
-          node-version-file: '.nvmrc'
-      - name: Assert node-version output
+          node-version-file: 'actions/hardened/actions--setup-node/v6.3.0/tests/fixtures/.nvmrc'
+      - name: Assert node-version output is set
         env:
-          NODE_VER: ${{ steps.action.outputs.node-version }}
+          NODE_VER: ${{ steps.setup-node.outputs.node-version }}
         run: |
-          echo "node-version: $NODE_VER"
+          echo "node-version output: $NODE_VER"
           if [ -z "$NODE_VER" ]; then
             echo "FAIL: node-version output is empty"
             exit 1
@@ -25,4 +23,4 @@ jobs:
       - name: Assert node is available
         run: |
           node --version
-          echo "PASS"
+          echo "PASS: node is available"
