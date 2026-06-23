@@ -1,4 +1,4 @@
-name: Test mirror and mirror-token inputs
+name: Test registry-url and scope inputs
 on:
   workflow_dispatch:
 jobs:
@@ -10,8 +10,8 @@ jobs:
         uses: .
         with:
           node-version: '20'
-          mirror: 'https://nodejs.org/dist'
-          mirror-token: ''
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@myorg'
       - name: Assert node-version output is set
         env:
           ACTUAL: ${{ steps.setup-node.outputs.node-version }}

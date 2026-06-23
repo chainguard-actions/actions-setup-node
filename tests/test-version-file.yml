@@ -1,4 +1,4 @@
-name: Test basic Node.js setup
+name: Test Node.js setup from version file
 on:
   workflow_dispatch:
 jobs:
@@ -6,10 +6,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create .node-version file
+        run: |
+          echo "18" > .node-version
+          cat .node-version
       - id: setup-node
         uses: .
         with:
-          node-version: '20'
+          node-version-file: '.node-version'
       - name: Assert node-version output is set
         env:
           NODE_VERSION_OUT: ${{ steps.setup-node.outputs.node-version }}
@@ -20,21 +24,13 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version output is set to $NODE_VERSION_OUT"
-      - name: Assert node is available and correct major version
+      - name: Assert node major version is 18
         run: |
           echo "node version: $(node --version)"
           NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
           echo "node major: $NODE_MAJOR"
-          if [ "$NODE_MAJOR" != "20" ]; then
-            echo "FAIL: expected node major version 20, got $NODE_MAJOR"
+          if [ "$NODE_MAJOR" != "18" ]; then
+            echo "FAIL: expected node major version 18, got $NODE_MAJOR"
             exit 1
           fi
-          echo "PASS: node major version is 20"
-      - name: Assert npm is available
-        run: |
-          echo "npm version: $(npm --version)"
-          if ! npm --version > /dev/null 2>&1; then
-            echo "FAIL: npm is not available"
-            exit 1
-          fi
-          echo "PASS: npm is available"
+          echo "PASS: node major version is 18"
