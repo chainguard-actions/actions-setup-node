@@ -1,0 +1,71 @@
+name: Test Node.js setup with registry URL
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      RUNNER_TOOL_CACHE: /tmp/hostedtoolcache
+      RUNNER_TEMP: /tmp/runner-temp
+      RUNNER_OS: Linux
+      RUNNER_ARCH: X64
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Prepare runner environment
+        run: |
+          mkdir -p /tmp/hostedtoolcache
+          mkdir -p /tmp/runner-temp
+      - id: setup-node
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Assert node is available
+        run: |
+          echo "node version: $(node --version)"
+          NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
+          if [ "$NODE_MAJOR" != "20" ]; then
+            echo "FAIL: expected node major version 20, got $NODE_MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 20"
+      - name: Assert .npmrc is configured with registry
+        run: |
+          echo "Checking for .npmrc..."
+          echo "RUNNER_TEMP: $RUNNER_TEMP"
+          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
+          # The action writes .npmrc to RUNNER_TEMP and sets NPM_CONFIG_USERCONFIG
+          NPMRC_FOUND=false
+          for NPMRC_PATH in "$RUNNER_TEMP/.npmrc" "$NPM_CONFIG_USERCONFIG" "$GITHUB_WORKSPACE/.npmrc" "$HOME/.npmrc"; do
+            if [ -n "$NPMRC_PATH" ] && [ -f "$NPMRC_PATH" ]; then
+              echo "Found .npmrc at: $NPMRC_PATH"
+              echo ".npmrc contents:"
+              cat "$NPMRC_PATH"
+              if grep -q "registry.npmjs.org" "$NPMRC_PATH"; then
+                echo "PASS: .npmrc contains the registry URL"
+                NPMRC_FOUND=true
+                break
+              fi
+            fi
+          done
+          if [ "$NPMRC_FOUND" != "true" ]; then
+            echo "FAIL: .npmrc with registry URL not found"
+            exit 1
+          fi
+      - name: Assert NODE_AUTH_TOKEN env var is referenced
+        run: |
+          echo "Checking .npmrc for auth token reference..."
+          NPMRC_FOUND=false
+          for NPMRC_PATH in "$RUNNER_TEMP/.npmrc" "$NPM_CONFIG_USERCONFIG" "$GITHUB_WORKSPACE/.npmrc" "$HOME/.npmrc"; do
+            if [ -n "$NPMRC_PATH" ] && [ -f "$NPMRC_PATH" ]; then
+              if grep -q "NODE_AUTH_TOKEN" "$NPMRC_PATH"; then
+                echo "PASS: .npmrc references NODE_AUTH_TOKEN"
+                NPMRC_FOUND=true
+                break
+              fi
+            fi
+          done
+          if [ "$NPMRC_FOUND" != "true" ]; then
+            echo "FAIL: .npmrc with NODE_AUTH_TOKEN reference not found"
+            exit 1
+          fi

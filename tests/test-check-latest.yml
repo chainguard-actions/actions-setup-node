@@ -1,4 +1,4 @@
-name: Test basic Node.js setup
+name: Test Node.js setup with check-latest
 on:
   workflow_dispatch:
 jobs:
@@ -19,6 +19,7 @@ jobs:
         uses: .
         with:
           node-version: '20'
+          check-latest: true
       - name: Assert node-version output is set
         env:
           NODE_VERSION_OUT: ${{ steps.setup-node.outputs.node-version }}
@@ -29,7 +30,7 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version output is set to $NODE_VERSION_OUT"
-      - name: Assert node is available and correct major version
+      - name: Assert node major version is 20
         run: |
           echo "node version: $(node --version)"
           NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)

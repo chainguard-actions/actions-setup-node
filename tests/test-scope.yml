@@ -1,4 +1,4 @@
-name: Test mirror input
+name: Test scope input
 on:
   workflow_dispatch:
 jobs:
@@ -10,8 +10,8 @@ jobs:
         uses: .
         with:
           node-version: '20'
-          mirror: 'https://nodejs.org/dist'
-          mirror-token: ''
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@myorg'
       - name: Assert node version output is set
         env:
           NODE_VER: ${{ steps.action.outputs.node-version }}

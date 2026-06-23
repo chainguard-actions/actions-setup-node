@@ -1,4 +1,4 @@
-name: Test mirror input
+name: Test architecture input
 on:
   workflow_dispatch:
 jobs:
@@ -10,8 +10,7 @@ jobs:
         uses: .
         with:
           node-version: '20'
-          mirror: 'https://nodejs.org/dist'
-          mirror-token: ''
+          architecture: x64
       - name: Assert node version output is set
         env:
           NODE_VER: ${{ steps.action.outputs.node-version }}

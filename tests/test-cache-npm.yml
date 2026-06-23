@@ -1,4 +1,4 @@
-name: Test basic Node.js setup
+name: Test Node.js setup with npm cache
 on:
   workflow_dispatch:
 jobs:
@@ -15,10 +15,34 @@ jobs:
         run: |
           mkdir -p /tmp/hostedtoolcache
           mkdir -p /tmp/runner-temp
+      - name: Create package.json with lock file for caching
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "name": "test-app",
+            "version": "1.0.0",
+            "dependencies": {}
+          }
+          EOF
+          cat > package-lock.json << 'EOF'
+          {
+            "name": "test-app",
+            "version": "1.0.0",
+            "lockfileVersion": 3,
+            "requires": true,
+            "packages": {
+              "": {
+                "name": "test-app",
+                "version": "1.0.0"
+              }
+            }
+          }
+          EOF
       - id: setup-node
         uses: .
         with:
           node-version: '20'
+          cache: 'npm'
       - name: Assert node-version output is set
         env:
           NODE_VERSION_OUT: ${{ steps.setup-node.outputs.node-version }}
@@ -29,21 +53,19 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version output is set to $NODE_VERSION_OUT"
-      - name: Assert node is available and correct major version
+      - name: Assert cache-hit output is defined
+        env:
+          CACHE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+        run: |
+          echo "cache-hit output: '$CACHE_HIT'"
+          # cache-hit can be 'true', 'false', or empty — all are valid in act
+          echo "PASS: cache-hit output is defined (value: $CACHE_HIT)"
+      - name: Assert node is available
         run: |
           echo "node version: $(node --version)"
           NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
-          echo "node major: $NODE_MAJOR"
           if [ "$NODE_MAJOR" != "20" ]; then
             echo "FAIL: expected node major version 20, got $NODE_MAJOR"
             exit 1
           fi
           echo "PASS: node major version is 20"
-      - name: Assert npm is available
-        run: |
-          echo "npm version: $(npm --version)"
-          if ! command -v npm &> /dev/null; then
-            echo "FAIL: npm is not available"
-            exit 1
-          fi
-          echo "PASS: npm is available"

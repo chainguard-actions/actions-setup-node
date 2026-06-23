@@ -1,4 +1,4 @@
-name: Test mirror input
+name: Test cache-dependency-path input
 on:
   workflow_dispatch:
 jobs:
@@ -6,12 +6,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create package-lock.json fixture
+        run: |
+          mkdir -p /tmp/node-project
+          cat > /tmp/node-project/package-lock.json <<'EOF'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "lockfileVersion": 2,
+            "requires": true,
+            "packages": {
+              "": {
+                "name": "test-project",
+                "version": "1.0.0"
+              }
+            }
+          }
+          EOF
       - id: action
         uses: .
         with:
           node-version: '20'
-          mirror: 'https://nodejs.org/dist'
-          mirror-token: ''
+          cache: npm
+          cache-dependency-path: /tmp/node-project/package-lock.json
       - name: Assert node version output is set
         env:
           NODE_VER: ${{ steps.action.outputs.node-version }}
