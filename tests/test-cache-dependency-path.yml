@@ -1,0 +1,39 @@
+name: Test cache-dependency-path input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create package-lock.json for cache
+        run: |
+          cat > /tmp/package-lock.json <<'EOF'
+          {
+            "name": "test",
+            "version": "1.0.0",
+            "lockfileVersion": 2,
+            "requires": true,
+            "packages": {}
+          }
+          EOF
+      - id: action
+        uses: .
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '/tmp/package-lock.json'
+      - name: Assert node version output is set
+        env:
+          NODE_VERSION: ${{ steps.action.outputs.node-version }}
+        run: |
+          echo "node-version: $NODE_VERSION"
+          if [ -z "$NODE_VERSION" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert node is available
+        run: |
+          node --version
+          echo "PASS"

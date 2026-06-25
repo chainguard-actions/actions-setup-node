@@ -1,0 +1,40 @@
+name: Test basic node setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup-node
+        uses: .
+        with:
+          node-version: '18'
+      - name: Assert node-version output is set
+        env:
+          NODE_VERSION_OUTPUT: ${{ steps.setup-node.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VERSION_OUTPUT"
+          if [ -z "$NODE_VERSION_OUTPUT" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $NODE_VERSION_OUTPUT"
+      - name: Assert node is available and correct major version
+        run: |
+          echo "node version: $(node --version)"
+          NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
+          echo "node major: $NODE_MAJOR"
+          if [ "$NODE_MAJOR" != "18" ]; then
+            echo "FAIL: expected node major version 18, got $NODE_MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 18"
+      - name: Assert npm is available
+        run: |
+          echo "npm version: $(npm --version)"
+          if ! npm --version > /dev/null 2>&1; then
+            echo "FAIL: npm is not available"
+            exit 1
+          fi
+          echo "PASS: npm is available"

@@ -1,0 +1,70 @@
+name: Test node setup with npm cache
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create package-lock.json for cache key
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "dependencies": {}
+          }
+          EOF
+          npm install --package-lock-only --ignore-scripts 2>/dev/null || true
+          ls -la package-lock.json || echo "package-lock.json not created, creating minimal one"
+          if [ ! -f package-lock.json ]; then
+            cat > package-lock.json << 'EOF2'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "lockfileVersion": 3,
+            "requires": true,
+            "packages": {
+              "": {
+                "name": "test-project",
+                "version": "1.0.0"
+              }
+            }
+          }
+          EOF2
+          fi
+          cat package-lock.json
+      - id: setup-node
+        uses: .
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Assert node-version output is set
+        env:
+          NODE_VERSION_OUTPUT: ${{ steps.setup-node.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VERSION_OUTPUT"
+          if [ -z "$NODE_VERSION_OUTPUT" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $NODE_VERSION_OUTPUT"
+      - name: Assert cache-hit output is present (true or false)
+        env:
+          CACHE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+        run: |
+          echo "cache-hit output: $CACHE_HIT"
+          if [ "$CACHE_HIT" != "true" ] && [ "$CACHE_HIT" != "false" ] && [ "$CACHE_HIT" != "" ]; then
+            echo "FAIL: cache-hit output has unexpected value: $CACHE_HIT"
+            exit 1
+          fi
+          echo "PASS: cache-hit output is acceptable: '$CACHE_HIT'"
+      - name: Assert node is available
+        run: |
+          echo "node version: $(node --version)"
+          NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
+          if [ "$NODE_MAJOR" != "18" ]; then
+            echo "FAIL: expected node major version 18, got $NODE_MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 18"
