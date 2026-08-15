@@ -1,0 +1,61 @@
+name: Test registry auth setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: 'true'
+      - name: Assert node is installed
+        env:
+          ACTUAL: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "actual node-version: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $ACTUAL"
+      - name: Assert .npmrc is configured with registry
+        run: |
+          echo "Checking for .npmrc..."
+          echo "RUNNER_TEMP: $RUNNER_TEMP"
+          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
+          # The action writes .npmrc to RUNNER_TEMP and sets NPM_CONFIG_USERCONFIG
+          FOUND=0
+          if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
+            echo "Found npmrc at NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG:"
+            cat "$NPM_CONFIG_USERCONFIG"
+            FOUND=1
+          fi
+          if [ -f "$RUNNER_TEMP/.npmrc" ]; then
+            echo "Found $RUNNER_TEMP/.npmrc:"
+            cat "$RUNNER_TEMP/.npmrc"
+            FOUND=1
+          fi
+          if [ -f "$HOME/.npmrc" ]; then
+            echo "Found $HOME/.npmrc:"
+            cat "$HOME/.npmrc"
+            FOUND=1
+          fi
+          if [ -f ".npmrc" ]; then
+            echo "Found .npmrc in workspace:"
+            cat ".npmrc"
+            FOUND=1
+          fi
+          if [ "$FOUND" = "0" ]; then
+            echo "FAIL: .npmrc not found in any expected location"
+            exit 1
+          fi
+          echo "PASS: .npmrc exists"
+      - name: Assert node is functional
+        run: |
+          echo "node version: $(node --version)"
+          node -e "console.log('Node.js is working')"
+          echo "PASS: node is functional"

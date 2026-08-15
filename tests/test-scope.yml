@@ -1,0 +1,57 @@
+name: Test scope input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup-node
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@testscope'
+      - name: Assert node is installed
+        run: |
+          echo "node version: $(node --version)"
+          if ! node --version > /dev/null 2>&1; then
+            echo "FAIL: node is not installed"
+            exit 1
+          fi
+          echo "PASS: node is installed"
+      - name: Assert node-version output is set
+        env:
+          ACTUAL: ${{ steps.setup-node.outputs.node-version }}
+        run: |
+          echo "actual node-version output: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $ACTUAL"
+      - name: Assert npmrc contains scope
+        run: |
+          echo "Checking .npmrc for scope configuration..."
+          if [ -f "$HOME/.npmrc" ]; then
+            echo "Contents of ~/.npmrc:"
+            cat "$HOME/.npmrc"
+            if grep -q "@testscope" "$HOME/.npmrc"; then
+              echo "PASS: scope @testscope found in ~/.npmrc"
+            else
+              echo "FAIL: scope @testscope not found in ~/.npmrc"
+              exit 1
+            fi
+          elif [ -f ".npmrc" ]; then
+            echo "Contents of .npmrc:"
+            cat ".npmrc"
+            if grep -q "@testscope" ".npmrc"; then
+              echo "PASS: scope @testscope found in .npmrc"
+            else
+              echo "FAIL: scope @testscope not found in .npmrc"
+              exit 1
+            fi
+          else
+            echo "FAIL: no .npmrc file found"
+            exit 1
+          fi

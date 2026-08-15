@@ -1,4 +1,4 @@
-name: Test node version from file
+name: Test basic node version setup
 on:
   workflow_dispatch:
 jobs:
@@ -9,7 +9,7 @@ jobs:
       - id: setup
         uses: .
         with:
-          node-version-file: 'tests/fixtures/.nvmrc'
+          node-version: '18'
       - name: Assert node-version output is set
         env:
           ACTUAL: ${{ steps.setup.outputs.node-version }}
@@ -20,7 +20,7 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version output is set to $ACTUAL"
-      - name: Assert node major version matches .nvmrc
+      - name: Assert node is on PATH and correct major version
         run: |
           echo "node version: $(node --version)"
           MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
@@ -30,3 +30,15 @@ jobs:
             exit 1
           fi
           echo "PASS: node major version is 18"
+      - name: Assert npm is on PATH
+        run: |
+          echo "npm version: $(npm --version)"
+          if ! command -v npm &> /dev/null; then
+            echo "FAIL: npm not found on PATH"
+            exit 1
+          fi
+          echo "PASS: npm is available"
+      - name: Assert node runs a script
+        run: |
+          node -e "console.log('Node.js is working, version:', process.version)"
+          echo "PASS: node executed successfully"

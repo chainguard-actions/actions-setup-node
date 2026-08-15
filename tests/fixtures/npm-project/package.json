@@ -1,0 +1,6 @@
+{
+  "name": "test-project",
+  "version": "1.0.0",
+  "description": "Test project for setup-node cache test",
+  "dependencies": {}
+}

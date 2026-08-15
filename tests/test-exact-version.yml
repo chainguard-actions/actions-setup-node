@@ -1,0 +1,44 @@
+name: Test exact node version setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '18.20.4'
+      - name: Assert node-version output is set
+        env:
+          ACTUAL: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "actual node-version: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $ACTUAL"
+      - name: Assert node version is 18.x
+        run: |
+          INSTALLED=$(node --version)
+          echo "installed node version: $INSTALLED"
+          MAJOR=$(echo "$INSTALLED" | sed 's/v//' | cut -d. -f1)
+          if [ "$MAJOR" != "18" ]; then
+            echo "FAIL: expected major version 18, got $MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 18 (installed: $INSTALLED)"
+      - name: Assert node runs correctly
+        run: |
+          node -e "
+            const v = process.version;
+            console.log('Node version:', v);
+            const major = parseInt(v.replace('v','').split('.')[0]);
+            if (major !== 18) {
+              console.error('FAIL: wrong major version', v);
+              process.exit(1);
+            }
+            console.log('PASS');
+          "
