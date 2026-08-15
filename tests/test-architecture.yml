@@ -11,7 +11,7 @@ jobs:
         with:
           node-version: '20'
           architecture: x64
-      - name: Assert node version output is set
+      - name: Assert node-version output is set
         env:
           NODE_VER: ${{ steps.action.outputs.node-version }}
         run: |
@@ -20,8 +20,14 @@ jobs:
             echo "FAIL: node-version output is empty"
             exit 1
           fi
-          echo "PASS"
-      - name: Assert node is available
+          echo "PASS: node-version=$NODE_VER"
+      - name: Assert node is available and is x64
         run: |
           node --version
+          ARCH=$(node -e "console.log(process.arch)")
+          echo "arch: $ARCH"
+          if [ "$ARCH" != "x64" ]; then
+            echo "FAIL: expected x64 but got $ARCH"
+            exit 1
+          fi
           echo "PASS"

@@ -1,0 +1,50 @@
+name: Test basic node version setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '20'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $NODE_VER"
+      - name: Assert node is on PATH and correct major version
+        run: |
+          echo "node path: $(which node)"
+          echo "node version: $(node --version)"
+          MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
+          echo "major version: $MAJOR"
+          if [ "$MAJOR" != "20" ]; then
+            echo "FAIL: expected major version 20, got $MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 20"
+      - name: Assert npm is available
+        run: |
+          echo "npm version: $(npm --version)"
+          if ! npm --version > /dev/null 2>&1; then
+            echo "FAIL: npm not available"
+            exit 1
+          fi
+          echo "PASS: npm is available"
+      - name: Assert node binary is functional
+        run: |
+          RESULT=$(node -e "console.log(1 + 1)")
+          echo "node eval result: $RESULT"
+          if [ "$RESULT" != "2" ]; then
+            echo "FAIL: expected '2', got '$RESULT'"
+            exit 1
+          fi
+          echo "PASS: node binary is functional"

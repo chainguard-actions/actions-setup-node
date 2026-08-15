@@ -1,71 +1,66 @@
-name: Test Node.js setup with registry URL
+name: Test node setup with registry URL
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      RUNNER_TOOL_CACHE: /tmp/hostedtoolcache
-      RUNNER_TEMP: /tmp/runner-temp
-      RUNNER_OS: Linux
-      RUNNER_ARCH: X64
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Prepare runner environment
-        run: |
-          mkdir -p /tmp/hostedtoolcache
-          mkdir -p /tmp/runner-temp
-      - id: setup-node
+      - id: setup
         uses: .
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - name: Assert node is available
+      - name: Assert node is installed
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
         run: |
-          echo "node version: $(node --version)"
-          NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
-          if [ "$NODE_MAJOR" != "20" ]; then
-            echo "FAIL: expected node major version 20, got $NODE_MAJOR"
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
             exit 1
           fi
-          echo "PASS: node major version is 20"
+          echo "PASS: node-version output is set"
+      - name: Assert NPM_CONFIG_USERCONFIG is set
+        run: |
+          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
+          if [ -z "$NPM_CONFIG_USERCONFIG" ]; then
+            echo "FAIL: NPM_CONFIG_USERCONFIG is not set"
+            exit 1
+          fi
+          echo "PASS: NPM_CONFIG_USERCONFIG is set to $NPM_CONFIG_USERCONFIG"
       - name: Assert .npmrc is configured with registry
         run: |
-          echo "Checking for .npmrc..."
-          echo "RUNNER_TEMP: $RUNNER_TEMP"
           echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
           # The action writes .npmrc to RUNNER_TEMP and sets NPM_CONFIG_USERCONFIG
-          NPMRC_FOUND=false
-          for NPMRC_PATH in "$RUNNER_TEMP/.npmrc" "$NPM_CONFIG_USERCONFIG" "$GITHUB_WORKSPACE/.npmrc" "$HOME/.npmrc"; do
-            if [ -n "$NPMRC_PATH" ] && [ -f "$NPMRC_PATH" ]; then
-              echo "Found .npmrc at: $NPMRC_PATH"
-              echo ".npmrc contents:"
-              cat "$NPMRC_PATH"
-              if grep -q "registry.npmjs.org" "$NPMRC_PATH"; then
-                echo "PASS: .npmrc contains the registry URL"
-                NPMRC_FOUND=true
-                break
-              fi
-            fi
-          done
-          if [ "$NPMRC_FOUND" != "true" ]; then
-            echo "FAIL: .npmrc with registry URL not found"
+          NPMRC_FILE="$NPM_CONFIG_USERCONFIG"
+          if [ -z "$NPMRC_FILE" ]; then
+            NPMRC_FILE="$RUNNER_TEMP/.npmrc"
+          fi
+          echo "Checking npmrc at: $NPMRC_FILE"
+          if [ ! -f "$NPMRC_FILE" ]; then
+            echo "FAIL: npmrc file not found at $NPMRC_FILE"
             exit 1
           fi
-      - name: Assert NODE_AUTH_TOKEN env var is referenced
+          echo "npmrc contents:"
+          cat "$NPMRC_FILE"
+          if grep -q "registry.npmjs.org" "$NPMRC_FILE"; then
+            echo "PASS: registry is set in .npmrc"
+          else
+            echo "FAIL: registry not found in .npmrc"
+            exit 1
+          fi
+      - name: Assert NODE_AUTH_TOKEN env var is referenced in npmrc
         run: |
-          echo "Checking .npmrc for auth token reference..."
-          NPMRC_FOUND=false
-          for NPMRC_PATH in "$RUNNER_TEMP/.npmrc" "$NPM_CONFIG_USERCONFIG" "$GITHUB_WORKSPACE/.npmrc" "$HOME/.npmrc"; do
-            if [ -n "$NPMRC_PATH" ] && [ -f "$NPMRC_PATH" ]; then
-              if grep -q "NODE_AUTH_TOKEN" "$NPMRC_PATH"; then
-                echo "PASS: .npmrc references NODE_AUTH_TOKEN"
-                NPMRC_FOUND=true
-                break
-              fi
-            fi
-          done
-          if [ "$NPMRC_FOUND" != "true" ]; then
-            echo "FAIL: .npmrc with NODE_AUTH_TOKEN reference not found"
+          NPMRC_FILE="$NPM_CONFIG_USERCONFIG"
+          if [ -z "$NPMRC_FILE" ]; then
+            NPMRC_FILE="$RUNNER_TEMP/.npmrc"
+          fi
+          NPMRC_CONTENT=$(cat "$NPMRC_FILE")
+          echo "npmrc content: $NPMRC_CONTENT"
+          if echo "$NPMRC_CONTENT" | grep -q "NODE_AUTH_TOKEN"; then
+            echo "PASS: NODE_AUTH_TOKEN reference found in .npmrc"
+          else
+            echo "FAIL: NODE_AUTH_TOKEN reference not found in .npmrc"
             exit 1
           fi

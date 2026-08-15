@@ -1,0 +1,49 @@
+name: Test node setup with LTS version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: 'lts/*'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is set to $NODE_VER"
+      - name: Assert node is on PATH
+        run: |
+          echo "node path: $(which node)"
+          echo "node version: $(node --version)"
+          if ! node --version > /dev/null 2>&1; then
+            echo "FAIL: node not available on PATH"
+            exit 1
+          fi
+          echo "PASS: node is available on PATH"
+      - name: Assert node version is a valid semver
+        run: |
+          VERSION=$(node --version)
+          echo "node version: $VERSION"
+          if ! echo "$VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "FAIL: node version '$VERSION' is not valid semver"
+            exit 1
+          fi
+          echo "PASS: node version is valid semver"
+      - name: Assert node binary is functional
+        run: |
+          RESULT=$(node -e "console.log('hello')")
+          echo "node eval result: $RESULT"
+          if [ "$RESULT" != "hello" ]; then
+            echo "FAIL: expected 'hello', got '$RESULT'"
+            exit 1
+          fi
+          echo "PASS: node binary is functional"

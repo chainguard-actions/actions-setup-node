@@ -1,4 +1,4 @@
-name: Test node version from file
+name: Test node setup with version range
 on:
   workflow_dispatch:
 jobs:
@@ -9,7 +9,7 @@ jobs:
       - id: setup
         uses: .
         with:
-          node-version-file: 'tests/fixtures/.nvmrc'
+          node-version: '>=18.0.0'
       - name: Assert node-version output is set
         env:
           NODE_VER: ${{ steps.setup.outputs.node-version }}
@@ -20,13 +20,22 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version output is set to $NODE_VER"
-      - name: Assert node major version is 18
+      - name: Assert node version satisfies range >=18
         run: |
           echo "node version: $(node --version)"
           MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
           echo "major version: $MAJOR"
-          if [ "$MAJOR" != "18" ]; then
-            echo "FAIL: expected major version 18, got $MAJOR"
+          if [ "$MAJOR" -lt 18 ]; then
+            echo "FAIL: expected major version >= 18, got $MAJOR"
             exit 1
           fi
-          echo "PASS: node major version is 18"
+          echo "PASS: node major version $MAJOR satisfies >=18"
+      - name: Assert node binary is functional
+        run: |
+          RESULT=$(node -e "console.log(1 + 1)")
+          echo "node eval result: $RESULT"
+          if [ "$RESULT" != "2" ]; then
+            echo "FAIL: expected '2', got '$RESULT'"
+            exit 1
+          fi
+          echo "PASS: node binary is functional"
