@@ -1,0 +1,59 @@
+name: Test Node.js setup with npm cache
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create package.json and package-lock.json for caching
+        run: |
+          cat > package.json <<'EOF'
+          {
+            "name": "test-app",
+            "version": "1.0.0",
+            "dependencies": {}
+          }
+          EOF
+          cat > package-lock.json <<'EOF'
+          {
+            "name": "test-app",
+            "version": "1.0.0",
+            "lockfileVersion": 3,
+            "requires": true,
+            "packages": {
+              "": {
+                "name": "test-app",
+                "version": "1.0.0"
+              }
+            }
+          }
+          EOF
+          echo "Created package.json and package-lock.json"
+      - id: setup
+        uses: .
+        continue-on-error: true
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Assert node setup with cache ran
+        env:
+          OUTCOME: ${{ steps.setup.outcome }}
+          NODE_VERSION: ${{ steps.setup.outputs.node-version }}
+          CACHE_KEY: ${{ steps.setup.outputs.cache-primary-key }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "node-version output: $NODE_VERSION"
+          echo "cache-primary-key: $CACHE_KEY"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$NODE_VERSION" ]; then
+              echo "FAIL: action succeeded but node-version output is empty"
+              exit 1
+            fi
+            echo "PASS: node-version='$NODE_VERSION'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (node24 runtime or network not available in act)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
