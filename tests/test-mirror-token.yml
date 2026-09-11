@@ -1,4 +1,4 @@
-name: Test architecture input
+name: Test mirror-token input
 on:
   workflow_dispatch:
 jobs:
@@ -10,7 +10,8 @@ jobs:
         uses: .
         with:
           node-version: '20'
-          architecture: x64
+          mirror: 'https://nodejs.org/dist'
+          mirror-token: ''
       - name: Assert node-version output is set
         env:
           NODE_VER: ${{ steps.setup-node.outputs.node-version }}
@@ -21,13 +22,7 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version is $NODE_VER"
-      - name: Assert node is on PATH and is x64
+      - name: Assert node is available
         run: |
           node --version
-          ARCH=$(node -e "console.log(process.arch)")
-          echo "arch: $ARCH"
-          if [ "$ARCH" != "x64" ]; then
-            echo "FAIL: expected x64 but got $ARCH"
-            exit 1
-          fi
-          echo "PASS"
+          echo "PASS: node is available"
