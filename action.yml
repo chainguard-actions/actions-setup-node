@@ -33,7 +33,6 @@ outputs:
   node-version:
     description: 'The installed node version.'
 runs:
-  pre: chainguard-phonehome.js
   using: 'node16'
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
