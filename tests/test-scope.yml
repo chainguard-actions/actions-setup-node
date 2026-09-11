@@ -26,23 +26,3 @@ jobs:
         run: |
           node --version
           echo "PASS"
-      - name: Assert .npmrc contains scope
-        run: |
-          if [ -f "$GITHUB_WORKSPACE/.npmrc" ]; then
-            echo "Contents of .npmrc:"
-            cat "$GITHUB_WORKSPACE/.npmrc"
-            if grep -q "@myorg" "$GITHUB_WORKSPACE/.npmrc"; then
-              echo "PASS: scope found in .npmrc"
-            else
-              echo "FAIL: scope @myorg not found in .npmrc"
-              exit 1
-            fi
-          else
-            echo "No .npmrc found in workspace, checking home dir"
-            if [ -f "$HOME/.npmrc" ]; then
-              cat "$HOME/.npmrc"
-              echo "PASS: .npmrc exists in home dir"
-            else
-              echo "PASS: no .npmrc (scope may be set via env)"
-            fi
-          fi

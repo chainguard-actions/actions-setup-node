@@ -11,7 +11,7 @@ jobs:
         with:
           node-version: '20'
           mirror: 'https://nodejs.org/dist'
-          mirror-token: 'test-mirror-token-value'
+          mirror-token: 'test-mirror-token-placeholder'
       - name: Assert node-version output is set
         env:
           NODE_VER: ${{ steps.action.outputs.node-version }}

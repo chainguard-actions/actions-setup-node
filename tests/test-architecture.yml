@@ -21,7 +21,7 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version=$NODE_VER"
-      - name: Assert node is available and is x64
+      - name: Assert node is on PATH and is x64
         run: |
           node --version
           ARCH=$(node -e "console.log(process.arch)")
