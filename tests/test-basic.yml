@@ -1,4 +1,4 @@
-name: Test basic Node.js setup
+name: Test basic node version setup
 on:
   workflow_dispatch:
 jobs:
@@ -20,21 +20,33 @@ jobs:
             exit 1
           fi
           echo "PASS: node-version output is set to $NODE_VERSION_OUT"
-      - name: Assert node is available and correct major version
+      - name: Assert node is available on PATH
         run: |
-          echo "node version: $(node --version)"
-          NODE_MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
-          echo "node major: $NODE_MAJOR"
-          if [ "$NODE_MAJOR" != "20" ]; then
-            echo "FAIL: expected node major version 20, got $NODE_MAJOR"
+          echo "node path: $(which node)"
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node is not available"
+            exit 1
+          fi
+          echo "PASS: node is available: $NODE_VER"
+      - name: Assert node version matches requested major
+        run: |
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          MAJOR=$(echo "$NODE_VER" | sed 's/v\([0-9]*\).*/\1/')
+          echo "major version: $MAJOR"
+          if [ "$MAJOR" != "20" ]; then
+            echo "FAIL: expected major version 20, got $MAJOR"
             exit 1
           fi
           echo "PASS: node major version is 20"
       - name: Assert npm is available
         run: |
-          echo "npm version: $(npm --version)"
-          if ! npm --version > /dev/null 2>&1; then
+          NPM_VER=$(npm --version)
+          echo "npm version: $NPM_VER"
+          if [ -z "$NPM_VER" ]; then
             echo "FAIL: npm is not available"
             exit 1
           fi
-          echo "PASS: npm is available"
+          echo "PASS: npm is available: $NPM_VER"

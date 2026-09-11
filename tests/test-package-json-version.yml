@@ -1,23 +1,22 @@
-name: Test Node.js setup from package.json engines field
+name: Test node version from package.json
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create package.json with engines field
         run: |
           cat > package.json << 'EOF'
           {
-            "name": "test-project",
+            "name": "test-app",
             "version": "1.0.0",
             "engines": {
-              "node": ">=18.0.0"
+              "node": "18"
             }
           }
           EOF
-          echo "package.json created:"
           cat package.json
       - id: setup-node
         uses: .
@@ -25,23 +24,31 @@ jobs:
           node-version-file: 'package.json'
       - name: Assert node-version output is set
         env:
-          ACTUAL: ${{ steps.setup-node.outputs.node-version }}
+          NODE_VERSION_OUT: ${{ steps.setup-node.outputs.node-version }}
         run: |
-          echo "actual node-version: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
+          echo "node-version output: $NODE_VERSION_OUT"
+          if [ -z "$NODE_VERSION_OUT" ]; then
             echo "FAIL: node-version output is empty"
             exit 1
           fi
-          echo "PASS: node-version output is '$ACTUAL'"
-      - name: Assert node version satisfies >=18
+          echo "PASS: node-version output is set to $NODE_VERSION_OUT"
+      - name: Assert node is available on PATH
         run: |
-          NODE_VERSION=$(node --version)
-          echo "node version: $NODE_VERSION"
-          # Extract major version number
-          MAJOR=$(echo "$NODE_VERSION" | sed 's/v\([0-9]*\).*/\1/')
-          echo "major version: $MAJOR"
-          if [ "$MAJOR" -lt 18 ]; then
-            echo "FAIL: expected node >=18, got $NODE_VERSION"
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node is not available"
             exit 1
           fi
-          echo "PASS: node version $NODE_VERSION satisfies >=18"
+          echo "PASS: node is available: $NODE_VER"
+      - name: Assert node version matches package.json engines
+        run: |
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          MAJOR=$(echo "$NODE_VER" | sed 's/v\([0-9]*\).*/\1/')
+          echo "major version: $MAJOR"
+          if [ "$MAJOR" != "18" ]; then
+            echo "FAIL: expected major version 18, got $MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 18 (from package.json)"

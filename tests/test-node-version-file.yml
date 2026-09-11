@@ -1,11 +1,11 @@
-name: Test Node.js setup from version file
+name: Test node version from file
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create .nvmrc file
         run: |
           echo "18" > .nvmrc
@@ -16,20 +16,31 @@ jobs:
           node-version-file: '.nvmrc'
       - name: Assert node-version output is set
         env:
-          ACTUAL: ${{ steps.setup-node.outputs.node-version }}
+          NODE_VERSION_OUT: ${{ steps.setup-node.outputs.node-version }}
         run: |
-          echo "actual node-version: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
+          echo "node-version output: $NODE_VERSION_OUT"
+          if [ -z "$NODE_VERSION_OUT" ]; then
             echo "FAIL: node-version output is empty"
             exit 1
           fi
-          echo "PASS: node-version output is '$ACTUAL'"
-      - name: Assert node version matches .nvmrc
+          echo "PASS: node-version output is set to $NODE_VERSION_OUT"
+      - name: Assert node is available on PATH
         run: |
-          NODE_VERSION=$(node --version)
-          echo "node version: $NODE_VERSION"
-          if [[ "$NODE_VERSION" != v18* ]]; then
-            echo "FAIL: expected node v18.x from .nvmrc, got $NODE_VERSION"
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node is not available"
             exit 1
           fi
-          echo "PASS: node version matches v18.x from .nvmrc"
+          echo "PASS: node is available: $NODE_VER"
+      - name: Assert node version matches .nvmrc
+        run: |
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          MAJOR=$(echo "$NODE_VER" | sed 's/v\([0-9]*\).*/\1/')
+          echo "major version: $MAJOR"
+          if [ "$MAJOR" != "18" ]; then
+            echo "FAIL: expected major version 18, got $MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version is 18"

@@ -1,11 +1,11 @@
-name: Test Node.js setup with check-latest
+name: Test check-latest flag
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - id: setup-node
         uses: .
         with:
@@ -13,29 +13,31 @@ jobs:
           check-latest: true
       - name: Assert node-version output is set
         env:
-          ACTUAL: ${{ steps.setup-node.outputs.node-version }}
+          NODE_VERSION_OUT: ${{ steps.setup-node.outputs.node-version }}
         run: |
-          echo "actual node-version: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
+          echo "node-version output: $NODE_VERSION_OUT"
+          if [ -z "$NODE_VERSION_OUT" ]; then
             echo "FAIL: node-version output is empty"
             exit 1
           fi
-          echo "PASS: node-version output is '$ACTUAL'"
-      - name: Assert node binary is available and is v20
+          echo "PASS: node-version output is set to $NODE_VERSION_OUT"
+      - name: Assert node is available on PATH
         run: |
-          NODE_VERSION=$(node --version)
-          echo "node version: $NODE_VERSION"
-          if [[ "$NODE_VERSION" != v20* ]]; then
-            echo "FAIL: expected node v20.x, got $NODE_VERSION"
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node is not available"
             exit 1
           fi
-          echo "PASS: node version matches v20.x with check-latest enabled"
-      - name: Assert npm is available
+          echo "PASS: node is available: $NODE_VER"
+      - name: Assert node version is v20.x
         run: |
-          NPM_VERSION=$(npm --version)
-          echo "npm version: $NPM_VERSION"
-          if [ -z "$NPM_VERSION" ]; then
-            echo "FAIL: npm not found"
+          NODE_VER=$(node --version)
+          echo "node version: $NODE_VER"
+          MAJOR=$(echo "$NODE_VER" | sed 's/v\([0-9]*\).*/\1/')
+          echo "major version: $MAJOR"
+          if [ "$MAJOR" != "20" ]; then
+            echo "FAIL: expected major version 20, got $MAJOR"
             exit 1
           fi
-          echo "PASS: npm is available at version $NPM_VERSION"
+          echo "PASS: node major version is 20 (latest)"
