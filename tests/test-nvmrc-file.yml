@@ -1,0 +1,52 @@
+name: Test node version from .nvmrc file
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Pre-populate tool cache with system node and create .nvmrc
+        run: |
+          NODE_VERSION=$(node --version | sed 's/v//')
+          TOOL_CACHE="${RUNNER_TOOL_CACHE:-/opt/hostedtoolcache}"
+          NODE_CACHE_DIR="$TOOL_CACHE/node/$NODE_VERSION/x64"
+          mkdir -p "$NODE_CACHE_DIR/bin"
+          ln -sf "$(which node)" "$NODE_CACHE_DIR/bin/node"
+          if which npm > /dev/null 2>&1; then
+            ln -sf "$(which npm)" "$NODE_CACHE_DIR/bin/npm"
+          fi
+          if which npx > /dev/null 2>&1; then
+            ln -sf "$(which npx)" "$NODE_CACHE_DIR/bin/npx"
+          fi
+          touch "$TOOL_CACHE/node/$NODE_VERSION/x64.complete"
+          echo "Pre-populated tool cache: $NODE_CACHE_DIR"
+          # Create .nvmrc with the major version of the system node
+          MAJOR=$(echo "$NODE_VERSION" | cut -d. -f1)
+          echo "$MAJOR" > "$GITHUB_WORKSPACE/.nvmrc"
+          echo "Created .nvmrc with content: $(cat $GITHUB_WORKSPACE/.nvmrc)"
+      - id: setup
+        uses: .
+        with:
+          node-version-file: '.nvmrc'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert node major version matches .nvmrc
+        run: |
+          echo "node version: $(node --version)"
+          MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
+          NVMRC_MAJOR=$(cat "$GITHUB_WORKSPACE/.nvmrc")
+          echo "major version: $MAJOR, nvmrc major: $NVMRC_MAJOR"
+          if [ "$MAJOR" != "$NVMRC_MAJOR" ]; then
+            echo "FAIL: expected major version $NVMRC_MAJOR, got $MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version matches .nvmrc ($MAJOR)"

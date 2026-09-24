@@ -1,0 +1,57 @@
+name: Test basic node version setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Pre-populate tool cache with system node
+        run: |
+          NODE_VERSION=$(node --version | sed 's/v//')
+          TOOL_CACHE="${RUNNER_TOOL_CACHE:-/opt/hostedtoolcache}"
+          NODE_CACHE_DIR="$TOOL_CACHE/node/$NODE_VERSION/x64"
+          mkdir -p "$NODE_CACHE_DIR/bin"
+          ln -sf "$(which node)" "$NODE_CACHE_DIR/bin/node"
+          if which npm > /dev/null 2>&1; then
+            ln -sf "$(which npm)" "$NODE_CACHE_DIR/bin/npm"
+          fi
+          if which npx > /dev/null 2>&1; then
+            ln -sf "$(which npx)" "$NODE_CACHE_DIR/bin/npx"
+          fi
+          touch "$TOOL_CACHE/node/$NODE_VERSION/x64.complete"
+          # Write the exact version to a file for the action to read
+          echo "$NODE_VERSION" > "$GITHUB_WORKSPACE/.node-version"
+          echo "Pre-populated tool cache: $NODE_CACHE_DIR"
+          echo "Node version: $NODE_VERSION"
+      - id: setup
+        uses: .
+        with:
+          node-version-file: '.node-version'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert node is on PATH
+        run: |
+          echo "node path: $(which node)"
+          echo "node version: $(node --version)"
+          if ! node --version > /dev/null 2>&1; then
+            echo "FAIL: node not available"
+            exit 1
+          fi
+          echo "PASS: node is available"
+      - name: Assert npm is available
+        run: |
+          echo "npm version: $(npm --version)"
+          if ! npm --version > /dev/null 2>&1; then
+            echo "FAIL: npm not available"
+            exit 1
+          fi
+          echo "PASS: npm is available"
