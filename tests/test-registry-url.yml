@@ -1,0 +1,51 @@
+name: Test registry-url configuration
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert .npmrc is configured with registry
+        run: |
+          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
+          echo "RUNNER_TEMP: $RUNNER_TEMP"
+          echo "Looking for .npmrc files..."
+          FOUND=false
+          # The action writes .npmrc to RUNNER_TEMP (exported as NPM_CONFIG_USERCONFIG)
+          for f in "$NPM_CONFIG_USERCONFIG" "$RUNNER_TEMP/.npmrc" "$GITHUB_WORKSPACE/.npmrc" "$HOME/.npmrc"; do
+            if [ -n "$f" ] && [ -f "$f" ]; then
+              echo "Contents of $f:"
+              cat "$f"
+              if grep -q "registry.npmjs.org" "$f"; then
+                FOUND=true
+                echo "Found registry URL in $f"
+              fi
+            fi
+          done
+          if [ "$FOUND" = "true" ]; then
+            echo "PASS: .npmrc contains registry URL"
+          else
+            echo "FAIL: registry URL not found in any .npmrc file"
+            exit 1
+          fi
+      - name: Assert npm config shows registry
+        run: |
+          echo "npm config list:"
+          npm config list
+          echo "PASS: npm config listed successfully"
