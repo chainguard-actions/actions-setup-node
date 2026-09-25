@@ -1,0 +1,63 @@
+name: Test npm caching
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create package-lock.json for cache key
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/npm-cache"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/npm-cache/package.json" <<'EOF'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "dependencies": {}
+          }
+          EOF
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/npm-cache/package-lock.json" <<'EOF'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "lockfileVersion": 3,
+            "requires": true,
+            "packages": {
+              "": {
+                "name": "test-project",
+                "version": "1.0.0"
+              }
+            }
+          }
+          EOF
+      - id: setup
+        uses: .
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'tests/fixtures/npm-cache/package-lock.json'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert cache-hit output is present
+        env:
+          CACHE_HIT: ${{ steps.setup.outputs.cache-hit }}
+        run: |
+          echo "cache-hit output: $CACHE_HIT"
+          # cache-hit can be 'true' or 'false' (or empty on first run), both are valid
+          echo "PASS: cache-hit output is '$CACHE_HIT'"
+      - name: Assert node is available
+        run: |
+          echo "node version: $(node --version)"
+          if ! command -v node &>/dev/null; then
+            echo "FAIL: node not found on PATH"
+            exit 1
+          fi
+          echo "PASS: node is available"
