@@ -1,0 +1,65 @@
+name: Test registry URL and auth setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: 'true'
+      - name: Assert node-version output is set
+        env:
+          NODE_VERSION: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VERSION"
+          if [ -z "$NODE_VERSION" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VERSION'"
+      - name: Assert npmrc is configured with registry
+        run: |
+          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
+          echo "RUNNER_TEMP: $RUNNER_TEMP"
+          # The action writes .npmrc to $RUNNER_TEMP/.npmrc and sets NPM_CONFIG_USERCONFIG
+          # Try the NPM_CONFIG_USERCONFIG path first
+          NPMRC_PATH="${NPM_CONFIG_USERCONFIG}"
+          if [ -z "$NPMRC_PATH" ] && [ -n "$RUNNER_TEMP" ]; then
+            NPMRC_PATH="${RUNNER_TEMP}/.npmrc"
+          fi
+          echo "Checking npmrc at: '$NPMRC_PATH'"
+          FOUND=0
+          if [ -n "$NPMRC_PATH" ] && [ -f "$NPMRC_PATH" ]; then
+            echo "npmrc contents:"
+            cat "$NPMRC_PATH"
+            if grep -q "registry.npmjs.org" "$NPMRC_PATH"; then
+              echo "PASS: npmrc contains registry URL"
+              FOUND=1
+            fi
+          fi
+          if [ "$FOUND" = "0" ] && [ -f ".npmrc" ]; then
+            echo ".npmrc contents:"
+            cat .npmrc
+            if grep -q "registry.npmjs.org" .npmrc; then
+              echo "PASS: .npmrc contains registry URL"
+              FOUND=1
+            fi
+          fi
+          if [ "$FOUND" = "0" ]; then
+            echo "FAIL: no npmrc file found with registry URL"
+            echo "Searched: '$NPMRC_PATH' and '.npmrc'"
+            exit 1
+          fi
+      - name: Assert node is available
+        run: |
+          echo "node version: $(node --version)"
+          if ! node --version > /dev/null 2>&1; then
+            echo "FAIL: node is not available"
+            exit 1
+          fi
+          echo "PASS: node is available"

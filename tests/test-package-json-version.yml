@@ -1,0 +1,45 @@
+name: Test node version from package.json
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create package.json with engines.node field
+        run: |
+          cat > tests/pkg.json << 'EOF'
+          {
+            "name": "test-app",
+            "version": "1.0.0",
+            "engines": {
+              "node": ">=20.0.0"
+            }
+          }
+          EOF
+          echo "Created tests/pkg.json:"
+          cat tests/pkg.json
+      - id: setup
+        uses: .
+        with:
+          node-version-file: 'tests/pkg.json'
+      - name: Assert node-version output is set
+        env:
+          NODE_VERSION: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VERSION"
+          if [ -z "$NODE_VERSION" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VERSION'"
+      - name: Assert node version satisfies >=20
+        run: |
+          echo "node version: $(node --version)"
+          MAJOR=$(node --version | sed 's/v//' | cut -d. -f1)
+          echo "major version: $MAJOR"
+          if [ "$MAJOR" -lt 20 ]; then
+            echo "FAIL: expected node version >= 20, got major $MAJOR"
+            exit 1
+          fi
+          echo "PASS: node major version $MAJOR satisfies >=20"
