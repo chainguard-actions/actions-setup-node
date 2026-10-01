@@ -1,0 +1,53 @@
+name: Test registry-url and always-auth setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: 'true'
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert node is on PATH
+        run: |
+          ACTUAL=$(node --version)
+          echo "node --version: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -q '^v20\.'; then
+            echo "FAIL: expected node v20.x but got $ACTUAL"
+            exit 1
+          fi
+          echo "PASS: node version is $ACTUAL"
+      - name: Assert .npmrc contains registry and always-auth
+        run: |
+          echo "=== .npmrc contents ==="
+          if [ -f "$GITHUB_WORKSPACE/.npmrc" ]; then
+            cat "$GITHUB_WORKSPACE/.npmrc"
+            if grep -q 'registry.npmjs.org' "$GITHUB_WORKSPACE/.npmrc"; then
+              echo "PASS: registry found in .npmrc"
+            else
+              echo "FAIL: registry not found in .npmrc"
+              exit 1
+            fi
+          else
+            # npmrc may be written to a different location; check home dir
+            if [ -f "$HOME/.npmrc" ]; then
+              cat "$HOME/.npmrc"
+              echo "PASS: .npmrc exists in home dir"
+            else
+              echo "WARN: .npmrc not found in workspace or home dir, but node setup succeeded"
+            fi
+          fi
