@@ -10,6 +10,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 |---------|-----|-----------------|
 | v3.9.1 | [`v3.9.1`](https://github.com/chainguard-actions/actions-setup-node/tree/v3.9.1) | [`3235b87`](https://github.com/actions/setup-node/commit/3235b876344d2a9aa001b8d1453c930bba69e610) |
 | v4.0.3 | [`v4.0.3`](https://github.com/chainguard-actions/actions-setup-node/tree/v4.0.3) | [`1e60f62`](https://github.com/actions/setup-node/commit/1e60f620b9541d16bece96c5465dc8ee9832be0b) |
+| v4.0.4 | [`v4.0.4`](https://github.com/chainguard-actions/actions-setup-node/tree/v4.0.4) | [`0a44ba7`](https://github.com/actions/setup-node/commit/0a44ba7841725637a19e28fa30b79a866c81b0a6) |
 | v4.4.0 | [`v4.4.0`](https://github.com/chainguard-actions/actions-setup-node/tree/v4.4.0) | [`49933ea`](https://github.com/actions/setup-node/commit/49933ea5288caeca8642d1e84afbd3f7d6820020) |
 | v5.0.0 | [`v5.0.0`](https://github.com/chainguard-actions/actions-setup-node/tree/v5.0.0) | [`a0853c2`](https://github.com/actions/setup-node/commit/a0853c24544627f65ddf259abe73b1d18a591444) |
 | v6 | [`v6`](https://github.com/chainguard-actions/actions-setup-node/tree/v6) | [`2499707`](https://github.com/actions/setup-node/commit/249970729cb0ef3589644e2896645e5dc5ba9c38) |
