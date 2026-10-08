@@ -1,0 +1,33 @@
+name: Test exact node version pinning
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '20.18.0'
+          token: ${{ github.token }}
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert node version matches exact pinned version
+        run: |
+          echo "node version: $(node --version)"
+          VERSION=$(node --version | sed 's/v//')
+          echo "version: $VERSION"
+          if [ "$VERSION" != "20.18.0" ]; then
+            echo "FAIL: expected 20.18.0, got $VERSION"
+            exit 1
+          fi
+          echo "PASS: node version is exactly 20.18.0"

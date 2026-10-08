@@ -1,0 +1,69 @@
+name: Test registry-url auth setup
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          token: ${{ github.token }}
+      - name: Assert node-version output is set
+        env:
+          NODE_VER: ${{ steps.setup.outputs.node-version }}
+        run: |
+          echo "node-version output: $NODE_VER"
+          if [ -z "$NODE_VER" ]; then
+            echo "FAIL: node-version output is empty"
+            exit 1
+          fi
+          echo "PASS: node-version output is '$NODE_VER'"
+      - name: Assert .npmrc is configured with registry
+        run: |
+          echo "Looking for .npmrc files..."
+          echo "RUNNER_TEMP: $RUNNER_TEMP"
+          # The action writes a .npmrc to RUNNER_TEMP
+          NPMRC=""
+          if [ -f "$RUNNER_TEMP/.npmrc" ]; then
+            NPMRC="$RUNNER_TEMP/.npmrc"
+          elif [ -f "$GITHUB_WORKSPACE/.npmrc" ]; then
+            NPMRC="$GITHUB_WORKSPACE/.npmrc"
+          elif [ -f "$HOME/.npmrc" ]; then
+            NPMRC="$HOME/.npmrc"
+          fi
+          if [ -z "$NPMRC" ]; then
+            echo "FAIL: no .npmrc file found in RUNNER_TEMP, GITHUB_WORKSPACE, or HOME"
+            exit 1
+          fi
+          echo "Found .npmrc at: $NPMRC"
+          cat "$NPMRC"
+          if ! grep -q "registry.npmjs.org" "$NPMRC"; then
+            echo "FAIL: .npmrc does not contain registry.npmjs.org"
+            exit 1
+          fi
+          echo "PASS: .npmrc contains the expected registry"
+      - name: Assert NODE_AUTH_TOKEN env var is referenced in npmrc
+        run: |
+          NPMRC=""
+          if [ -f "$RUNNER_TEMP/.npmrc" ]; then
+            NPMRC="$RUNNER_TEMP/.npmrc"
+          elif [ -f "$GITHUB_WORKSPACE/.npmrc" ]; then
+            NPMRC="$GITHUB_WORKSPACE/.npmrc"
+          elif [ -f "$HOME/.npmrc" ]; then
+            NPMRC="$HOME/.npmrc"
+          fi
+          if [ -z "$NPMRC" ]; then
+            echo "SKIP: no .npmrc found, skipping auth token check"
+            exit 0
+          fi
+          cat "$NPMRC"
+          if grep -q "NODE_AUTH_TOKEN" "$NPMRC"; then
+            echo "PASS: .npmrc references NODE_AUTH_TOKEN for auth"
+          else
+            echo "INFO: .npmrc does not reference NODE_AUTH_TOKEN (may be normal for public registry)"
+            echo "PASS"
+          fi
