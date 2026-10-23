@@ -1,0 +1,27 @@
+name: Test exact node-version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          node-version: '18.19.0'
+      - name: Assert exact version installed
+        env:
+          ACTUAL: ${{ steps.action.outputs.node-version }}
+        run: |
+          echo "output: $ACTUAL"
+          echo "node on PATH: $(node --version)"
+          if [ "$ACTUAL" != "v18.19.0" ]; then
+            echo "FAIL: expected v18.19.0"
+            exit 1
+          fi
+          if [ "$(node --version)" != "v18.19.0" ]; then
+            echo "FAIL: node on PATH is not v18.19.0"
+            exit 1
+          fi
+          echo "PASS"

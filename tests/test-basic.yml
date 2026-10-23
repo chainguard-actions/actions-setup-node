@@ -1,0 +1,28 @@
+name: Test basic node-version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          node-version: '20'
+      - name: Assert node-version output and PATH
+        env:
+          ACTUAL: ${{ steps.action.outputs.node-version }}
+        run: |
+          echo "output: $ACTUAL"
+          echo "node on PATH: $(node --version)"
+          case "$ACTUAL" in
+            v20.*) ;;
+            *) echo "FAIL: expected output to start with v20."; exit 1 ;;
+          esac
+          if [ "$(node --version)" != "$ACTUAL" ]; then
+            echo "FAIL: node on PATH does not match output"
+            exit 1
+          fi
+          npm --version || { echo "FAIL: npm not available"; exit 1; }
+          echo "PASS"

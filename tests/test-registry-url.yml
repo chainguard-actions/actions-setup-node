@@ -1,0 +1,35 @@
+name: Test registry-url and scope
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@MyScope'
+      - name: Assert npmrc configured
+        run: |
+          echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG"
+          if [ -z "$NPM_CONFIG_USERCONFIG" ] || [ ! -f "$NPM_CONFIG_USERCONFIG" ]; then
+            echo "FAIL: NPM_CONFIG_USERCONFIG not set or file missing"
+            exit 1
+          fi
+          cat "$NPM_CONFIG_USERCONFIG"
+          if ! grep -q '^@myscope:registry=https://registry.npmjs.org/' "$NPM_CONFIG_USERCONFIG"; then
+            echo "FAIL: scoped registry line missing"
+            exit 1
+          fi
+          if ! grep -q '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}' "$NPM_CONFIG_USERCONFIG"; then
+            echo "FAIL: auth token line missing"
+            exit 1
+          fi
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "FAIL: NODE_AUTH_TOKEN placeholder not exported"
+            exit 1
+          fi
+          echo "PASS"

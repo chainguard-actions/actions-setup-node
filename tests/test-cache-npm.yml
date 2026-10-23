@@ -1,0 +1,30 @@
+name: Test npm cache with cache-dependency-path
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: '**/fixtures/cache-npm/package-lock.json'
+      - name: Assert outputs
+        env:
+          VERSION: ${{ steps.action.outputs.node-version }}
+          CACHE_HIT: ${{ steps.action.outputs.cache-hit }}
+        run: |
+          echo "node-version: $VERSION"
+          echo "cache-hit: $CACHE_HIT"
+          case "$VERSION" in
+            v20.*) ;;
+            *) echo "FAIL: expected v20.x"; exit 1 ;;
+          esac
+          if [ "$CACHE_HIT" != "true" ] && [ "$CACHE_HIT" != "false" ]; then
+            echo "FAIL: cache-hit should be 'true' or 'false'"
+            exit 1
+          fi
+          echo "PASS"
